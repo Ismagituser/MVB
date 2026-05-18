@@ -1878,7 +1878,13 @@ class CadQueryBuilder(utils.BuilderBase):
 
         # Build bobbin geometry if not toroidal, bobbin has thickness, and requested
         if not is_toroidal and include_bobbin:
-            bobbin_geom = self.get_bobbin(bobbin_processed)
+            # get_bobbin needs (data_dict, winding_window_dict, ..., export_files=False)
+            # — pass the RAW bobbin dict (StandardBobbin uses .get()) not the dataclass,
+            # pull the first winding window from processedDescription as a dict, and
+            # set export_files=False so we get the Workplane object, not a (step,stl) tuple.
+            _bobbin_pd = bobbin_data.get("processedDescription", {}) if isinstance(bobbin_data, dict) else {}
+            _ww_dict   = (_bobbin_pd.get("windingWindows") or [{}])[0]
+            bobbin_geom = self.get_bobbin(bobbin_data, _ww_dict, export_files=False)
 
         # Get wire info from functionalDescription
         wire_desc = WireDescription(WireType.round)  # default
